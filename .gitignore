@@ -3,3 +3,10 @@ node_modules
 dist
 .env.*
 .env
+!.env.example
+
+# Prisma / SQLite local database files
+prisma/finance.db
+prisma/finance.db-journal
+prisma/finance.db-shm
+prisma/finance.db-wal
