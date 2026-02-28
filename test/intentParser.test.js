@@ -19,7 +19,17 @@ test("parses income command", () => {
 test("parses utility commands", () => {
   assert.equal(parseIntent("balance").intent, INTENTS.GET_BALANCE);
   assert.equal(parseIntent("summary").intent, INTENTS.GET_SUMMARY);
+  assert.equal(parseIntent("summary last month").monthOffset, -1);
+  assert.equal(parseIntent("budgets").intent, INTENTS.GET_BUDGETS);
+  assert.equal(parseIntent("top 5").intent, INTENTS.GET_TOP);
   assert.equal(parseIntent("/help").intent, INTENTS.HELP);
+});
+
+test("parses budget command", () => {
+  const result = parseIntent("budget food 30000");
+  assert.equal(result.intent, INTENTS.SET_BUDGET);
+  assert.equal(result.category, "food");
+  assert.equal(result.amount, 30000);
 });
 
 test("returns UNKNOWN for unsupported command", () => {

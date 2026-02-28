@@ -76,6 +76,14 @@ npm test
 - `summary` or `report`
 - `help`
 
+## Phase 4 Commands
+
+- `budget food 30000`
+- `budgets`
+- `summary`
+- `summary last month`
+- `top 5`
+
 Unknown input returns:
 `I didn't understand that. Send help for commands.`
 

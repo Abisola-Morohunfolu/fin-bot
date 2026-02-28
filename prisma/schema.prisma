@@ -21,7 +21,9 @@ model Transaction {
 
 model Budget {
   id       Int    @id @default(autoincrement())
-  category String @unique
+  category String
   amount   Float
   month    String
+
+  @@unique([category, month])
 }
