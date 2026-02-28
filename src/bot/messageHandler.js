@@ -5,6 +5,14 @@ import {
   getMonthlySummary
 } from "../services/financeService.js";
 import { formatCurrency, formatSummary } from "../utils/formatter.js";
+import {
+  buildPendingCard,
+  clearPendingFor,
+  getPending,
+  handleMedia,
+  hasPending,
+  updatePendingField
+} from "./mediaHandler.js";
 
 function helpMessage() {
   return [
@@ -18,6 +26,53 @@ function helpMessage() {
 }
 
 export async function handleMessage(msg) {
+  if (msg.hasMedia) {
+    try {
+      return await handleMedia(msg);
+    } catch (error) {
+      return `Could not process image: ${error.message}`;
+    }
+  }
+
+  const from = msg.from;
+  const text = (msg.body || "").trim();
+  const lower = text.toLowerCase();
+
+  if (hasPending(from)) {
+    if (lower === "yes") {
+      const pending = getPending(from);
+      const created = await addTransaction({
+        type: pending.type,
+        amount: pending.amount,
+        category: pending.category,
+        description: pending.description,
+        currency: pending.currency,
+        source: "image"
+      });
+      clearPendingFor(from);
+      return `✅ Saved: ${pending.type === "expense" ? "-" : "+"}${formatCurrency(created.amount, created.currency)} (${created.category})`;
+    }
+
+    if (lower === "no") {
+      clearPendingFor(from);
+      return "❌ Discarded pending transaction.";
+    }
+
+    const editMatch = text.match(/^edit\s+(\w+)\s+(.+)$/i);
+    if (editMatch) {
+      const field = editMatch[1];
+      const value = editMatch[2].trim();
+      const result = updatePendingField(from, field, value);
+      if (result?.error) {
+        return `⚠️ ${result.error}`;
+      }
+      const card = buildPendingCard(from);
+      return card || "No pending transaction found.";
+    }
+
+    return "Pending transaction detected. Reply with `yes`, `no`, or `edit [field] [value]`.";
+  }
+
   const parsed = parseIntent(msg.body);
 
   switch (parsed.intent) {

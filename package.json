@@ -9,6 +9,7 @@
     "prisma:migrate": "prisma migrate dev --name init"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.39.0",
     "@prisma/client": "^6.5.0",
     "dotenv": "^16.4.5",
     "qrcode-terminal": "^0.12.0",
