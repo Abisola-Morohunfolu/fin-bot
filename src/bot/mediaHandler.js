@@ -112,3 +112,20 @@ export function buildPendingCard(phoneNumber) {
   }
   return buildConfirmationMessage(data);
 }
+
+// Test helpers to avoid relying on external APIs during unit tests.
+export function __setPendingForTest(phoneNumber, data) {
+  clearPending(phoneNumber);
+  pendingMap.set(phoneNumber, data);
+}
+
+export function __resetPendingForTest() {
+  for (const [phoneNumber, timer] of pendingTimers.entries()) {
+    clearTimeout(timer);
+    pendingTimers.delete(phoneNumber);
+    pendingMap.delete(phoneNumber);
+  }
+  for (const phoneNumber of pendingMap.keys()) {
+    pendingMap.delete(phoneNumber);
+  }
+}

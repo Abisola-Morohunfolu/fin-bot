@@ -61,6 +61,13 @@ npm run prisma:migrate
 npm start
 ```
 
+## Tests
+
+Run unit tests:
+```bash
+npm test
+```
+
 ## Phase 2 Commands
 
 - `spent 4500 on groceries`
