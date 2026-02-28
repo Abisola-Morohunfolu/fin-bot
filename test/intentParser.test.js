@@ -21,6 +21,7 @@ test("parses utility commands", () => {
   assert.equal(parseIntent("summary").intent, INTENTS.GET_SUMMARY);
   assert.equal(parseIntent("summary last month").monthOffset, -1);
   assert.equal(parseIntent("budgets").intent, INTENTS.GET_BUDGETS);
+  assert.equal(parseIntent("categories").intent, INTENTS.LIST_CATEGORIES);
   assert.equal(parseIntent("top 5").intent, INTENTS.GET_TOP);
   assert.equal(parseIntent("/help").intent, INTENTS.HELP);
 });
@@ -34,4 +35,10 @@ test("parses budget command", () => {
 
 test("returns UNKNOWN for unsupported command", () => {
   assert.equal(parseIntent("hello there").intent, INTENTS.UNKNOWN);
+});
+
+test("parses create category command", () => {
+  const result = parseIntent("category add fuel");
+  assert.equal(result.intent, INTENTS.CREATE_CATEGORY);
+  assert.equal(result.name, "fuel");
 });

@@ -61,6 +61,19 @@ npm run prisma:migrate
 npm start
 ```
 
+## One-Time Category Backfill (Existing DBs)
+
+If your database was created before the `Category` table refactor, run:
+
+```bash
+npm run db:backfill-categories
+```
+
+This script:
+- creates `Category`
+- backfills `categoryId` for existing transactions and budgets
+- rebuilds `Transaction` and `Budget` with strict foreign keys
+
 ## Tests
 
 Run unit tests:
@@ -80,6 +93,8 @@ npm test
 
 - `budget food 30000`
 - `budgets`
+- `categories`
+- `category add fuel`
 - `summary`
 - `summary last month`
 - `top 5`

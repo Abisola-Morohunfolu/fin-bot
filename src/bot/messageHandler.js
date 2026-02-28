@@ -13,6 +13,10 @@ import {
   getTopExpenses
 } from "../services/reportService.js";
 import {
+  createCategory,
+  listCategories
+} from "../services/categoryService.js";
+import {
   buildPendingCard,
   clearPendingFor,
   getPending,
@@ -28,6 +32,8 @@ function helpMessage() {
     "- earned <amount> <description>",
     "- budget <category> <amount>",
     "- budgets",
+    "- categories",
+    "- category add <name>",
     "- balance",
     "- summary | summary last month",
     "- top <n>",
@@ -111,7 +117,7 @@ export async function handleMessage(msg) {
     case INTENTS.SET_BUDGET: {
       const month = getCurrentMonthKey();
       const budget = await setBudget(parsed.category, parsed.amount, month);
-      return `✅ Budget set: ${budget.category} ${formatCurrency(budget.amount)} for ${budget.month}`;
+      return `✅ Budget set: ${budget.category.name} ${formatCurrency(budget.amount)} for ${budget.month}`;
     }
 
     case INTENTS.GET_BUDGETS: {
@@ -124,6 +130,22 @@ export async function handleMessage(msg) {
         `Budgets (${month}):`,
         ...budgets.map((item) => `- ${item.category}: ${formatCurrency(item.amount)}`)
       ].join("\n");
+    }
+
+    case INTENTS.LIST_CATEGORIES: {
+      const categories = await listCategories();
+      if (categories.length === 0) {
+        return "No categories found.";
+      }
+      return [
+        "Available categories:",
+        ...categories.map((item) => `- ${item.name}${item.isDefault ? " (default)" : ""}`)
+      ].join("\n");
+    }
+
+    case INTENTS.CREATE_CATEGORY: {
+      const category = await createCategory(parsed.name);
+      return `✅ Category ready: ${category.name}`;
     }
 
     case INTENTS.GET_BALANCE: {

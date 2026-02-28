@@ -3,6 +3,8 @@ export const INTENTS = {
   ADD_INCOME: "ADD_INCOME",
   SET_BUDGET: "SET_BUDGET",
   GET_BUDGETS: "GET_BUDGETS",
+  LIST_CATEGORIES: "LIST_CATEGORIES",
+  CREATE_CATEGORY: "CREATE_CATEGORY",
   GET_BALANCE: "GET_BALANCE",
   GET_SUMMARY: "GET_SUMMARY",
   GET_TOP: "GET_TOP",
@@ -28,6 +30,15 @@ export function parseIntent(input = "") {
 
   if (lower === "budgets") {
     return { intent: INTENTS.GET_BUDGETS };
+  }
+
+  if (lower === "categories") {
+    return { intent: INTENTS.LIST_CATEGORIES };
+  }
+
+  const createCategoryMatch = lower.match(/^category\s+add\s+(.+)$/i);
+  if (createCategoryMatch) {
+    return { intent: INTENTS.CREATE_CATEGORY, name: createCategoryMatch[1].trim() };
   }
 
   const budgetMatch = lower.match(/^budget\s+([a-z][a-z0-9\s-]{1,50})\s+([\d,.]+)$/i);

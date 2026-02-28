@@ -27,15 +27,18 @@ function monthName(monthKey) {
 export async function getMonthlySummary(month = getCurrentMonthKey()) {
   const { start, end } = getMonthRange(month);
 
-  const [rows, incomeAgg, expenseAgg] = await Promise.all([
-    prisma.transaction.groupBy({
-      by: ["category"],
+  const [expenseRows, incomeAgg, expenseAgg] = await Promise.all([
+    prisma.transaction.findMany({
       where: {
         type: "expense",
         createdAt: { gte: start, lt: end }
       },
-      _sum: { amount: true },
-      orderBy: { _sum: { amount: "desc" } }
+      select: {
+        amount: true,
+        category: {
+          select: { name: true }
+        }
+      }
     }),
     prisma.transaction.aggregate({
       where: {
@@ -53,15 +56,22 @@ export async function getMonthlySummary(month = getCurrentMonthKey()) {
     })
   ]);
 
+  const grouped = new Map();
+  for (const row of expenseRows) {
+    const name = row.category.name;
+    grouped.set(name, (grouped.get(name) || 0) + row.amount);
+  }
+
+  const categories = [...grouped.entries()]
+    .map(([category, amount]) => ({ category, amount }))
+    .sort((a, b) => b.amount - a.amount);
+
   return {
     month,
     income: incomeAgg._sum.amount || 0,
     expenses: expenseAgg._sum.amount || 0,
     balance: (incomeAgg._sum.amount || 0) - (expenseAgg._sum.amount || 0),
-    categories: rows.map((row) => ({
-      category: row.category,
-      amount: row._sum.amount || 0
-    }))
+    categories
   };
 }
 
@@ -108,12 +118,21 @@ export function buildSummaryMessage(summary, budgets) {
 
 export async function getTopExpenses(limit = 5, month = getCurrentMonthKey()) {
   const { start, end } = getMonthRange(month);
-  return prisma.transaction.findMany({
+  const rows = await prisma.transaction.findMany({
     where: {
       type: "expense",
       createdAt: { gte: start, lt: end }
     },
+    include: {
+      category: {
+        select: { name: true }
+      }
+    },
     orderBy: { amount: "desc" },
     take: limit
   });
+  return rows.map((row) => ({
+    ...row,
+    category: row.category.name
+  }));
 }

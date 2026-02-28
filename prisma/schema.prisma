@@ -12,7 +12,8 @@ model Transaction {
   type        String
   amount      Float
   currency    String   @default("NGN")
-  category    String
+  categoryId  Int
+  category    Category @relation(fields: [categoryId], references: [id])
   description String?
   source      String   @default("text")
   rawImageUrl String?
@@ -20,10 +21,22 @@ model Transaction {
 }
 
 model Budget {
-  id       Int    @id @default(autoincrement())
-  category String
-  amount   Float
-  month    String
+  id         Int      @id @default(autoincrement())
+  categoryId Int
+  category   Category @relation(fields: [categoryId], references: [id])
+  amount     Float
+  month      String
 
-  @@unique([category, month])
+  @@unique([categoryId, month])
+}
+
+model Category {
+  id           Int           @id @default(autoincrement())
+  name         String        @unique
+  slug         String        @unique
+  isDefault    Boolean       @default(false)
+  ownerPhone   String?
+  createdAt    DateTime      @default(now())
+  transactions Transaction[]
+  budgets      Budget[]
 }

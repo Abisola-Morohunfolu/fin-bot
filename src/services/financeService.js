@@ -1,5 +1,6 @@
 import { prisma } from "../db/prismaClient.js";
 import { formatCurrency } from "../utils/formatter.js";
+import { resolveOrCreateCategory } from "./categoryService.js";
 
 function getMonthRange(month) {
   const [year, monthNum] = month.split("-").map(Number);
@@ -24,8 +25,8 @@ async function getBudgetAlertForTransaction(transaction) {
   const month = getCurrentMonthKey();
   const budget = await prisma.budget.findUnique({
     where: {
-      category_month: {
-        category: transaction.category,
+      categoryId_month: {
+        categoryId: transaction.categoryId,
         month
       }
     }
@@ -39,7 +40,7 @@ async function getBudgetAlertForTransaction(transaction) {
   const spent = await prisma.transaction.aggregate({
     where: {
       type: "expense",
-      category: transaction.category,
+      categoryId: transaction.categoryId,
       createdAt: { gte: start, lt: end }
     },
     _sum: { amount: true }
@@ -50,7 +51,7 @@ async function getBudgetAlertForTransaction(transaction) {
     return null;
   }
 
-  return `⚠️ You have exceeded your ${transaction.category} budget (${formatCurrency(budget.amount)})`;
+  return `⚠️ You have exceeded your ${transaction.category.name} budget (${formatCurrency(budget.amount)})`;
 }
 
 export async function addTransaction({
@@ -62,20 +63,30 @@ export async function addTransaction({
   source = "text",
   rawImageUrl = null
 }) {
+  const categoryRecord = await resolveOrCreateCategory(category);
   const transaction = await prisma.transaction.create({
     data: {
       type,
       amount,
       currency,
-      category,
+      categoryId: categoryRecord.id,
       description,
       source,
       rawImageUrl
+    },
+    include: {
+      category: true
     }
   });
 
   const budgetAlert = await getBudgetAlertForTransaction(transaction);
-  return { transaction, budgetAlert };
+  return {
+    transaction: {
+      ...transaction,
+      category: transaction.category.name
+    },
+    budgetAlert
+  };
 }
 
 export async function getBalance() {
@@ -132,18 +143,27 @@ export async function getMonthlySummary(month = getCurrentMonthKey()) {
 }
 
 export async function setBudget(category, amount, month = getCurrentMonthKey()) {
+  const categoryRecord = await resolveOrCreateCategory(category);
   return prisma.budget.upsert({
     where: {
-      category_month: { category, month }
+      categoryId_month: { categoryId: categoryRecord.id, month }
     },
-    create: { category, amount, month },
-    update: { amount }
+    create: { categoryId: categoryRecord.id, amount, month },
+    update: { amount },
+    include: { category: true }
   });
 }
 
 export async function getBudgets(month = getCurrentMonthKey()) {
-  return prisma.budget.findMany({
+  const budgets = await prisma.budget.findMany({
     where: { month },
-    orderBy: { category: "asc" }
+    include: { category: true },
+    orderBy: { category: { name: "asc" } }
   });
+  return budgets.map((budget) => ({
+    id: budget.id,
+    month: budget.month,
+    amount: budget.amount,
+    category: budget.category.name
+  }));
 }
